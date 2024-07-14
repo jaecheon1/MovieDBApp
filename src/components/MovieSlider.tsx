@@ -50,7 +50,7 @@ const MovieSlider = ({ movies }) => {
       </ScrollView>
       <View style={styles.dotsContainer}>
         {movies.map((_, index) => (
-          <Text key={index} style={index === activeSlide ? styles.activeDot : styles.dot}>•</Text>
+          <Text key={`dot-${index}`} style={index === activeSlide ? styles.activeDot : styles.dot}>•</Text>
         ))}
       </View>
     </View>

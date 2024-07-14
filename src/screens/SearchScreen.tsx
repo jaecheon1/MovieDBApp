@@ -1,44 +1,78 @@
+// src/screens/SearchScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, FlatList, Image } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { useDispatch, useSelector } from 'react-redux';
-import { searchMovies } from '../redux/slices/movieSlice';
 import { RootState } from '../redux/store';
+import { fetchMoviesBySearch, fetchActorsBySearch } from '../redux/slices/searchSlice';
 
-const SearchScreen = ({ navigation }) => {
+const SearchScreen = () => {
   const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('movies');
   const dispatch = useDispatch();
-  const searchResults = useSelector((state: RootState) => state.movies.searchResults);
-  const status = useSelector((state: RootState) => state.movies.status);
+
+  const searchResults = useSelector((state: RootState) => state.search);
 
   const handleSearch = () => {
-    dispatch(searchMovies(query));
+    if (category === 'movies') {
+      dispatch(fetchMoviesBySearch(query));
+    } else {
+      dispatch(fetchActorsBySearch(query));
+    }
   };
+
+  const renderResultItem = ({ item }) => (
+    <TouchableOpacity style={styles.resultItem}>
+      <Image
+        source={{ uri: `https://image.tmdb.org/t/p/w500${item.poster_path || item.profile_path}` }}
+        style={styles.resultImage}
+      />
+      <Text style={styles.resultText}>{item.title || item.name}</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.searchBar}
-        placeholder="Search Movies"
-        placeholderTextColor="#888"
-        value={query}
-        onChangeText={setQuery}
-        onSubmitEditing={handleSearch}
-      />
-      {status === 'loading' ? (
-        <Text style={styles.text}>Loading...</Text>
-      ) : (
-        <FlatList
-          data={searchResults}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => navigation.navigate('Details', { movieId: item.id })}>
-              <View style={styles.movieContainer}>
-                <Text style={styles.movieTitle}>{item.title}</Text>
-              </View>
-            </TouchableOpacity>
-          )}
+      <View style={styles.searchBar}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search"
+          placeholderTextColor="#aaa"
+          value={query}
+          onChangeText={setQuery}
         />
-      )}
+        <TouchableOpacity onPress={handleSearch} style={styles.searchButton}>
+          <Icon name="search-outline" size={24} color="green" />
+        </TouchableOpacity>
+      </View>
+      <FlatList
+        data={searchResults.results}
+        renderItem={renderResultItem}
+        keyExtractor={(item) => item.id.toString()}
+        ListHeaderComponent={
+          <View style={styles.initialView}>
+            <Icon name="search-outline" size={100} color="#fff" />
+            <Text style={styles.initialText}>Search Any Movie</Text>
+          </View>
+        }
+        ListFooterComponent={
+          <View style={styles.categoryContainer}>
+            <TouchableOpacity
+              style={[styles.categoryButton, category === 'movies' && styles.categoryButtonActive]}
+              onPress={() => setCategory('movies')}
+            >
+              <Text style={[styles.categoryText, category === 'movies' && styles.categoryTextActive]}>Movies</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.categoryButton, category === 'actors' && styles.categoryButtonActive]}
+              onPress={() => setCategory('actors')}
+            >
+              <Text style={[styles.categoryText, category === 'actors' && styles.categoryTextActive]}>Actors</Text>
+            </TouchableOpacity>
+          </View>
+        }
+        contentContainerStyle={styles.resultsContainer}
+      />
     </View>
   );
 };
@@ -50,26 +84,77 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   searchBar: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  searchInput: {
+    flex: 1,
     height: 40,
-    borderColor: 'gray',
+    borderColor: '#444',
     borderWidth: 1,
     borderRadius: 5,
-    marginBottom: 10,
-    paddingLeft: 8,
     color: '#fff',
+    paddingHorizontal: 10,
   },
-  text: {
-    fontSize: 18,
-    color: '#fff',
-  },
-  movieContainer: {
+  searchButton: {
+    marginLeft: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 10,
-    borderBottomColor: '#333',
-    borderBottomWidth: 1,
   },
-  movieTitle: {
+  categoryContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 20,
+  },
+  categoryButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#444',
+  },
+  categoryButtonActive: {
+    backgroundColor: 'green',
+  },
+  categoryText: {
+    color: '#fff',
+  },
+  categoryTextActive: {
+    color: '#000',
+  },
+  loadingText: {
+    color: '#fff',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  resultsContainer: {
+    paddingBottom: 20,
+  },
+  resultItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  resultImage: {
+    width: 50,
+    height: 75,
+    borderRadius: 5,
+    marginRight: 10,
+  },
+  resultText: {
     color: '#fff',
     fontSize: 16,
+  },
+  initialView: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 50,
+  },
+  initialText: {
+    color: '#fff',
+    fontSize: 18,
+    marginTop: 10,
   },
 });
 

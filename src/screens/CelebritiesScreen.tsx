@@ -1,4 +1,3 @@
-// src/screens/CelebritiesScreen.tsx
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, FlatList } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -11,18 +10,9 @@ const CelebritiesScreen = ({ navigation }) => {
 
   useEffect(() => {
     dispatch(fetchCelebrities('popular'));
-    dispatch(fetchCelebrities('trending'));
   }, [dispatch]);
 
-  const categories = [
-    { title: 'Popular', key: 'popular' },
-    { title: 'Trending', key: 'trending' },
-  ];
-
-  const celebrities = {
-    popular: useSelector((state: RootState) => state.celebrities.popular),
-    trending: useSelector((state: RootState) => state.celebrities.trending),
-  };
+  const celebrities = useSelector((state: RootState) => state.celebrities.popular);
 
   const renderPopularCelebrities = ({ item }) => (
     <TouchableOpacity
@@ -41,65 +31,23 @@ const CelebritiesScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
-  const renderTrendingCelebrities = ({ item }) => (
-    <TouchableOpacity
-      key={item.id}
-      onPress={() => navigation.navigate('Details', { celebrityId: item.id })}
-    >
-      <View style={styles.trendingItem}>
-        <Image
-          source={{ uri: `https://image.tmdb.org/t/p/w500${item.profile_path}` }}
-          style={styles.trendingImage}
-        />
-        <View style={styles.trendingInfo}>
-          <Text style={styles.trendingName}>{item.name}</Text>
-          <Text style={styles.trendingPopularity}>
-            Popularity: <Text style={styles.trendingPopularityNumber}>{item.popularity}</Text>
-          </Text>
-        </View>
-        <Icon name="chevron-forward-outline" size={14} color="#fff" style={styles.arrowIcon} />
-      </View>
-    </TouchableOpacity>
-  );
-
   const ListHeader = () => (
-    <View>
-      {categories.map((category) => (
-        <View key={category.key} style={styles.category}>
-          <View style={styles.categoryHeader}>
-            <Text style={styles.categoryTitle}>{category.title}</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('CelebrityCategory', { category: category.key })}>
-              <Text style={styles.seeAll}>See All <Icon name="chevron-forward-outline" size={16} color="#fff" /></Text>
-            </TouchableOpacity>
-          </View>
-          {category.key === 'popular' ? (
-            <View style={styles.popularContainer}>
-              <FlatList
-                data={celebrities.popular.slice(0, 10)}
-                renderItem={renderPopularCelebrities}
-                keyExtractor={(item) => item.id.toString()}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-              />
-              <FlatList
-                data={celebrities.popular.slice(10, 20)}
-                renderItem={renderPopularCelebrities}
-                keyExtractor={(item) => item.id.toString()}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-              />
-            </View>
-          ) : (
-            <FlatList
-              data={celebrities.trending.slice(0, 8)}
-              renderItem={renderTrendingCelebrities}
-              keyExtractor={(item) => item.id.toString()}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-            />
-          )}
-        </View>
-      ))}
+    <View style={styles.category}>
+      <View style={styles.categoryHeader}>
+        <Text style={styles.categoryTitle}>Popular</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('CelebrityCategory', { category: 'popular' })}>
+          <Text style={styles.seeAll}>See All <Icon name="chevron-forward-outline" size={16} color="#fff" /></Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.popularContainer}>
+        <FlatList
+          data={celebrities.slice(0, 20)}
+          renderItem={renderPopularCelebrities}
+          keyExtractor={(item) => item.id.toString()}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+        />
+      </View>
     </View>
   );
 
@@ -150,30 +98,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 140,
     borderRadius: 10,
-  },
-  trendingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  trendingImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-  },
-  trendingInfo: {
-    marginLeft: 10,
-    flex: 1,
-  },
-  trendingName: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  trendingPopularity: {
-    color: '#fff',
-  },
-  trendingPopularityNumber: {
-    color: 'green',
   },
   celebrityName: {
     color: '#fff',

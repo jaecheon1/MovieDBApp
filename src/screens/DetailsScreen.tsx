@@ -1,18 +1,19 @@
-// src/screens/DetailsScreen.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Linking, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Linking, Dimensions, Alert } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
-import { fetchMovieDetails, fetchActors, fetchSimilarMovies } from '../redux/slices/movieSlice';
+import { fetchMovieDetails, fetchActors, fetchSimilarMovies, toggleFavorite, addRating } from '../redux/slices/movieSlice';
 import api from '../services/api';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const { width } = Dimensions.get('window');
 
-const DetailsScreen = ({ route }) => {
+const DetailsScreen = ({ route, navigation }) => {
   const { movieId } = route.params;
   const dispatch = useDispatch();
   const [videos, setVideos] = useState([]);
+  const [ratingMode, setRatingMode] = useState(false);
+  const [selectedRating, setSelectedRating] = useState(0);
 
   useEffect(() => {
     dispatch(fetchMovieDetails(movieId));
@@ -30,7 +31,20 @@ const DetailsScreen = ({ route }) => {
     }
   };
 
-  const { movieDetails, actors, similarMovies, isLoading } = useSelector((state: RootState) => state.movies);
+  const { movieDetails, actors, similarMovies, isLoading, favorites, ratings } = useSelector((state: RootState) => state.movies);
+
+  const isFavorite = favorites.includes(movieId);
+  const userRating = ratings[movieId] || movieDetails?.vote_average || 0;
+
+  const handleRateMovie = () => {
+    if (selectedRating === 0) {
+      Alert.alert("Please select a rating before submitting.");
+    } else {
+      dispatch(addRating({ movieId, rating: selectedRating }));
+      setSelectedRating(0);
+      setRatingMode(false);
+    }
+  };
 
   if (isLoading || !movieDetails) {
     return (
@@ -54,15 +68,71 @@ const DetailsScreen = ({ route }) => {
     ));
   };
 
+  const renderStars = (rating, setRating = null) => {
+    const fullStars = Math.floor(rating / 2);
+    const halfStar = rating % 2 >= 1 ? 1 : 0;
+    const emptyStars = 5 - fullStars - halfStar;
+
+    return (
+      <View style={styles.starContainer}>
+        {Array(fullStars).fill().map((_, i) => (
+          <TouchableOpacity key={`full-${i}`} onPress={() => setRating && setRating((i + 1) * 2)}>
+            <Icon name="star" size={20} color="green" />
+          </TouchableOpacity>
+        ))}
+        {halfStar === 1 && (
+          <TouchableOpacity onPress={() => setRating && setRating(fullStars * 2 + 1)}>
+            <Icon name="star-half" size={20} color="green" />
+          </TouchableOpacity>
+        )}
+        {Array(emptyStars).fill().map((_, i) => (
+          <TouchableOpacity key={`empty-${i}`} onPress={() => setRating && setRating((fullStars + halfStar + i + 1) * 2)}>
+            <Icon name="star-outline" size={20} color="green" />
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.titleContainer}>
         <Text style={styles.movieTitle}>{movieDetails.title}</Text>
       </View>
-      <Image
-        source={{ uri: `https://image.tmdb.org/t/p/w500${movieDetails.poster_path}` }}
-        style={styles.posterImage}
-      />
+      <View style={styles.posterContainer}>
+        <Image
+          source={{ uri: `https://image.tmdb.org/t/p/w500${movieDetails.poster_path}` }}
+          style={styles.posterImage}
+        />
+        <TouchableOpacity
+          onPress={() => dispatch(toggleFavorite(movieId))}
+          style={styles.bookmarkIcon}>
+          <Icon name={isFavorite ? "bookmark" : "bookmark-outline"} size={30} color={isFavorite ? "green" : "white"} />
+        </TouchableOpacity>
+        <View style={styles.movieInfo}>
+          <View style={styles.ratingContainer}>
+            {renderStars(userRating)}
+            <Text style={styles.voteCount}>({movieDetails.vote_count})</Text>
+            {!ratingMode && (
+              <TouchableOpacity onPress={() => setRatingMode(true)} style={styles.rateButton}>
+                <Text style={styles.rateButtonText}>Rate</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          {ratingMode && (
+            <View style={styles.userRatingContainer}>
+              {renderStars(selectedRating, setSelectedRating)}
+              <TouchableOpacity onPress={handleRateMovie} style={styles.submitButton}>
+                <Text style={styles.submitButtonText}>Submit</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          <Text style={styles.releaseDate}>Release date: {movieDetails.release_date}</Text>
+          <Text style={styles.country}>Country: {movieDetails.production_countries.map(c => c.name).join(', ')}</Text>
+          <Text style={styles.language}>Language: {movieDetails.original_language}</Text>
+          <Text style={styles.revenue}>Revenue: {movieDetails.revenue}$</Text>
+        </View>
+      </View>
       <View style={styles.infoContainer}>
         <Text style={styles.sectionTitle}>Overview</Text>
         <Text style={styles.overviewText}>{movieDetails.overview}</Text>
@@ -129,9 +199,57 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
   },
+  posterContainer: {
+    flexDirection: 'row',
+    marginTop: 10,
+    paddingHorizontal: 10,
+  },
   posterImage: {
-    width: '100%',
-    height: width * 1.5,
+    width: 100,
+    height: 150,
+    borderRadius: 10,
+  },
+  bookmarkIcon: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+  },
+  movieInfo: {
+    flex: 1,
+    marginLeft: 20,
+    justifyContent: 'center',
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  starContainer: {
+    flexDirection: 'row',
+  },
+  voteCount: {
+    color: '#fff',
+    fontSize: 16,
+    marginLeft: 10,
+  },
+  releaseDate: {
+    color: '#fff',
+    fontSize: 16,
+    marginTop: 5,
+  },
+  country: {
+    color: '#fff',
+    fontSize: 16,
+    marginTop: 5,
+  },
+  language: {
+    color: '#fff',
+    fontSize: 16,
+    marginTop: 5,
+  },
+  revenue: {
+    color: '#fff',
+    fontSize: 16,
+    marginTop: 5,
   },
   infoContainer: {
     padding: 20,
@@ -186,6 +304,33 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     textAlign: 'center',
+  },
+  rateButton: {
+    marginLeft: 10,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    backgroundColor: 'green',
+    borderRadius: 5,
+  },
+  rateButtonText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  submitButton: {
+    marginLeft: 10,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    backgroundColor: 'green',
+    borderRadius: 5,
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  userRatingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
   },
 });
 

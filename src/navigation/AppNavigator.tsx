@@ -6,9 +6,9 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import HomeScreen from '../screens/HomeScreen';
 import CelebritiesScreen from '../screens/CelebritiesScreen';
 import SearchScreen from '../screens/SearchScreen';
-import ProfileScreen from '../screens/ProfileScreen';
 import DetailsScreen from '../screens/DetailsScreen';
 import CategoryScreen from '../screens/CategoryScreen';
+import FilterScreen from '../screens/FilterScreen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Text, View } from 'react-native';
 
@@ -60,9 +60,9 @@ const SearchStackScreen = () => (
   </Stack.Navigator>
 );
 
-const ProfileStackScreen = () => (
+const FilterStackScreen = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+    <Stack.Screen name="FilterScreen" component={FilterScreen} />
   </Stack.Navigator>
 );
 
@@ -79,8 +79,8 @@ const AppNavigator = () => (
             iconName = focused ? 'people' : 'people-outline';
           } else if (route.name === 'Search') {
             iconName = focused ? 'search' : 'search-outline';
-          } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline';
+          } else if (route.name === 'Filter') {
+            iconName = focused ? 'filter' : 'filter-outline';
           }
 
           return <Icon name={iconName} size={size} color={color} />;
@@ -124,10 +124,10 @@ const AppNavigator = () => (
         }}
       />
       <Tab.Screen
-        name="Profile"
-        component={ProfileStackScreen}
+        name="Filter"
+        component={FilterStackScreen}
         options={{
-          header: () => <CustomHeader title="Profile" />
+          header: () => <CustomHeader title="Filter" />
         }}
       />
     </Tab.Navigator>

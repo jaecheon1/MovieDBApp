@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import api from '../../services/api';
 
 export const fetchMovieDetails = createAsyncThunk(
@@ -43,10 +43,25 @@ const movieSlice = createSlice({
     top_rated: [],
     now_playing: [],
     upcoming: [],
+    favorites: [],
     isLoading: false,
     error: null,
+    ratings: {},
   },
-  reducers: {},
+  reducers: {
+    toggleFavorite: (state, action: PayloadAction<number>) => {
+      const movieId = action.payload;
+      if (state.favorites.includes(movieId)) {
+        state.favorites = state.favorites.filter(id => id !== movieId);
+      } else {
+        state.favorites.push(movieId);
+      }
+    },
+    addRating: (state, action: PayloadAction<{ movieId: number, rating: number }>) => {
+      const { movieId, rating } = action.payload;
+      state.ratings[movieId] = rating;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchMovieDetails.pending, (state) => {
@@ -95,5 +110,7 @@ const movieSlice = createSlice({
       });
   },
 });
+
+export const { toggleFavorite, addRating } = movieSlice.actions;
 
 export default movieSlice.reducer;
